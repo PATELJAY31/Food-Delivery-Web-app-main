@@ -14,10 +14,15 @@ const port = process.env.PORT || 4000
 
 //middleware
 app.use(express.json())
-app.use(cors())
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.FRONTEND_URL, process.env.ADMIN_URL] 
+    : 'http://localhost:5173',
+  credentials: true
+}))
 
 //db connection
-connectDB();
+connectDB().catch(err => console.error("Initial DB connection error:", err));
 
 //api endpoints 
 app.use("/api/food",foodRouter)
@@ -30,7 +35,13 @@ app.get("/",(req,res)=>{
     res.send("API Working")
 })
 
-app.listen(port,()=>{
-    console.log(`Server Started on port ${port}`)
-})
+// For Vercel serverless deployment, we export the app
+export default app;
+
+// Only start the server if not in production (Vercel handles this in production)
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(port,()=>{
+      console.log(`Server Started on port ${port}`)
+  })
+}
 
